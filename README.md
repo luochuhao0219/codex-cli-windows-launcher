@@ -6,6 +6,19 @@ An unofficial, open-source Windows launcher for the Codex CLI. It discovers the 
 
 Chinese documentation: [README.zh-CN.md](README.zh-CN.md).
 
+## What problem does this solve?
+
+On Windows, a local proxy client may expose only a SOCKS5 endpoint, such as `127.0.0.1:1080`. Codex CLI and some of its network paths are more reliable when they receive standard `HTTP_PROXY` and `HTTPS_PROXY` URLs. A proxy mismatch can appear during sign-in as errors such as `token exchange failed`, or as connection, tunnel, or stream failures. Manually converting or exporting proxy variables for every terminal session is error-prone, and setting them globally can affect unrelated applications.
+
+This launcher bridges that gap for one Codex session:
+
+1. It reads the **current computer's** Windows system-proxy configuration every time it starts. No proxy host, port, or public IP address is hard-coded.
+2. If the selected proxy is SOCKS5, it starts a temporary loopback-only HTTP proxy and forwards it to that SOCKS5 endpoint.
+3. It gives only the Codex process the resulting `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY` values, then removes the temporary conversion process when Codex exits.
+4. It also provides a Desktop entry, project-folder selection, session resume, and first-run Codex CLI installation.
+
+It does **not** provide a proxy service, bypass network, account access, or make an unavailable network reachable. The user must still have a working direct connection or a working local proxy, and must be able to sign in to Codex. Not every `token exchange failed` error is caused by a proxy; account, service, DNS, and network-policy problems can produce similar symptoms.
+
 ## Install for everyday use
 
 This is the recommended path for most users. You do **not** need Git or a source checkout.
