@@ -19,4 +19,15 @@ function Select-CodexProjectDirectory {
     return $DefaultPath
 }
 
-Export-ModuleMember -Function Get-DefaultCodexProjectsPath,Select-CodexProjectDirectory
+function Select-CodexLaunchMode {
+    Write-Host ''
+    Write-Host '请选择启动方式：' -ForegroundColor Cyan
+    Write-Host '  1. 新建会话（选择工作文件夹）'
+    Write-Host '  2. 恢复历史会话'
+    $choice = Read-Host '输入 1 或 2（直接回车默认为 1）'
+    if ($choice -eq '2') { return 'Resume' }
+    if ($choice -and $choice -ne '1') { Write-Host '输入无效，已按“新建会话”启动。' -ForegroundColor Yellow }
+    return 'New'
+}
+
+Export-ModuleMember -Function Get-DefaultCodexProjectsPath,Select-CodexProjectDirectory,Select-CodexLaunchMode

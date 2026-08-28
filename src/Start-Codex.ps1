@@ -19,14 +19,10 @@ try {
     $environment = Test-CodexLauncherEnvironment -RuntimeRoot $runtimeRoot
     # PowerShell unwraps an empty array returned from a function to $null.
     # Preserve an array so the following Count check works under StrictMode.
-    $problems = @(Get-EnvironmentProblems $environment)
+    $problems = @(Get-EnvironmentProblems $environment -SkipCodex)
     if ($problems.Count -gt 0) {
         $problems | ForEach-Object { Write-Host $_ -ForegroundColor Red; Write-LauncherLog $_ 'ERROR' }
         throw '启动前环境检查失败。'
-    }
-    if ($environment.LoginChecked -and -not $environment.LoggedIn) {
-        Write-Host '未能确认 Codex CLI 登录状态。首次使用时请按 Codex 提示完成登录。' -ForegroundColor Yellow
-        Write-LauncherLog 'Codex login status was not confirmed.' 'WARN'
     }
     $defaultProjects = Get-DefaultCodexProjectsPath
     New-Item -ItemType Directory -Path $defaultProjects -Force | Out-Null
@@ -49,11 +45,31 @@ try {
             if (-not (Test-HttpProxyConnectivity -ProxyUrl $proxyUrl)) { throw '检测到 HTTP/HTTPS 代理，但无法连接 auth.openai.com。请确认代理可用后重试。' }
         }
     } else { Write-LauncherLog 'No proxy selected; Codex will use direct networking.' 'WARN' }
-    $projectDirectory = Select-CodexProjectDirectory -DefaultPath $defaultProjects
-    Set-Location -LiteralPath $projectDirectory
-    Write-LauncherLog "Launching Codex in project directory: $projectDirectory"
     if ($proxyUrl) { $env:HTTP_PROXY = $proxyUrl; $env:HTTPS_PROXY = $proxyUrl; $env:NO_PROXY = 'localhost,127.0.0.1' }
-    & (Get-Command 'codex.cmd' -ErrorAction Stop).Source
+    if (-not $environment.Codex) {
+        [void](Install-CodexCli)
+        $environment = Test-CodexLauncherEnvironment -RuntimeRoot $runtimeRoot
+    }
+    $problems = @(Get-EnvironmentProblems $environment)
+    if ($problems.Count -gt 0) {
+        $problems | ForEach-Object { Write-Host $_ -ForegroundColor Red; Write-LauncherLog $_ 'ERROR' }
+        throw '启动前环境检查失败。'
+    }
+    if ($environment.LoginChecked -and -not $environment.LoggedIn) {
+        Write-Host '未能确认 Codex CLI 登录状态。首次使用时请按 Codex 提示完成登录。' -ForegroundColor Yellow
+        Write-LauncherLog 'Codex login status was not confirmed.' 'WARN'
+    }
+    $launchMode = Select-CodexLaunchMode
+    $codex = (Get-Command 'codex.cmd' -ErrorAction Stop).Source
+    if ($launchMode -eq 'Resume') {
+        Write-LauncherLog 'Opening Codex history session picker.'
+        & $codex resume
+    } else {
+        $projectDirectory = Select-CodexProjectDirectory -DefaultPath $defaultProjects
+        Set-Location -LiteralPath $projectDirectory
+        Write-LauncherLog "Launching new Codex session in project directory: $projectDirectory"
+        & $codex
+    }
     $exitCode = $LASTEXITCODE
     Write-LauncherLog "Codex exited with code $exitCode."
     exit $exitCode

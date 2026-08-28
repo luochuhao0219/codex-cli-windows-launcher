@@ -17,7 +17,6 @@ function Require-Command([string]$name, [string]$help) {
 try {
     Require-Command node '未检测到 Node.js。请先安装 Node.js LTS。'
     Require-Command 'npm.cmd' '未检测到 npm。请重新安装 Node.js LTS。'
-    Require-Command 'codex.cmd' '未检测到 Codex CLI。请执行 npm.cmd install -g @openai/codex 后重试。'
     if (-not (Test-Path -LiteralPath $runtimeSource)) { throw '发行包不完整：缺少 runtime 目录。' }
     Write-Host "将安装到：$target"
     Write-Host "桌面入口：$desktopEntry"

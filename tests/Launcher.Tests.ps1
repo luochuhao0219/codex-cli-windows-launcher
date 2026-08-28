@@ -12,4 +12,7 @@ Describe 'Launcher support functions' {
         $record.Pid | Should Be $PID
         $record.Marker | Should Match 'proxy-server'
     }
+    It 'exports the launch-mode selector' {
+        Get-Command Select-CodexLaunchMode -ErrorAction Stop | Should Not BeNullOrEmpty
+    }
 }

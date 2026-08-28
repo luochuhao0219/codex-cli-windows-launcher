@@ -1,6 +1,6 @@
 {
   "name": "codex-cli-windows-launcher",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Unofficial Windows launcher for Codex CLI with local proxy conversion.",
   "license": "MIT",
