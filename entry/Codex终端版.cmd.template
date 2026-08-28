@@ -1,0 +1,5 @@
+@echo off
+setlocal
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\CodexLauncher\Start-Codex.ps1"
+set "EXITCODE=%ERRORLEVEL%"
+endlocal & exit /b %EXITCODE%

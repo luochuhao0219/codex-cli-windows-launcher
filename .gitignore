@@ -1,0 +1,10 @@
+node_modules/
+dist/
+logs/
+*.log
+*.tmp
+*.bak
+.DS_Store
+coverage/
+.vscode/
+local.settings.json

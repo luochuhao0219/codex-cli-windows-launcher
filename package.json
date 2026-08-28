@@ -1,0 +1,14 @@
+{
+  "name": "codex-cli-windows-launcher",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Unofficial Windows launcher for Codex CLI with local proxy conversion.",
+  "license": "MIT",
+  "dependencies": {
+    "proxy-chain": "2.5.9"
+  },
+  "scripts": {
+    "test": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/Test.ps1",
+    "build": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/Build.ps1"
+  }
+}
