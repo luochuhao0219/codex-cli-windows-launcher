@@ -1,38 +1,93 @@
 # Codex CLI Windows Launcher
 
-An unofficial, open-source Windows launcher for the Codex CLI. It discovers the current Windows proxy configuration, converts a local SOCKS5 proxy to loopback HTTP when required, lets you choose a project folder, and launches `codex.cmd` with process-scoped proxy variables.
+An unofficial, open-source Windows launcher for the Codex CLI. It discovers the current Windows proxy configuration, converts a local SOCKS5 proxy to loopback HTTP when required, lets you choose a project folder, and launches Codex with proxy variables scoped only to that process.
 
 > This project is not an OpenAI product and is not affiliated with or endorsed by OpenAI. It never collects passwords, tokens, cookies, OAuth codes, or API keys.
 
 Chinese documentation: [README.zh-CN.md](README.zh-CN.md).
 
-## Requirements and installation
+## Install for everyday use
 
-Windows PowerShell 5.1+, Node.js LTS with npm, and a preinstalled/logged-in Codex CLI are required. Download a versioned ZIP, extract it, and run `Install.cmd`. The installer uses `%LOCALAPPDATA%\CodexLauncher`, creates `%USERPROFILE%\Documents\CodexProjects` (respecting redirected Documents), and writes one desktop file, `Codex终端版.cmd`. Existing files with that name are backed up with a timestamp.
+This is the recommended path for most users. You do **not** need Git or a source checkout.
 
-The desktop file calls the installed `Start-Codex.ps1`; it contains no proxy or launcher business logic. It dynamically resolves the Desktop folder, so OneDrive redirection is supported.
+1. Open the [latest GitHub Release](https://github.com/luochuhao0219/codex-cli-windows-launcher/releases/latest).
+2. Download the release asset named `CodexLauncher-v*.zip`. Do not download GitHub's automatically generated `Source code (zip)` archive; it cannot be installed directly.
+3. Extract the ZIP to any writable folder.
+4. If you are updating an existing installation, close every Codex/launcher window first.
+5. Double-click `Install.cmd` in the extracted folder.
+6. After the installer reports success, double-click `Codex终端版.cmd` on your Desktop.
 
-## Usage and operation
+### Prerequisites
 
-Connect Anycast or another local proxy, then double-click `Codex终端版.cmd`. The folder picker opens at `CodexProjects`; cancellation uses that default folder. Codex runs in exactly the selected folder, including Chinese and space-containing paths.
+- A 64-bit Windows installation with Windows PowerShell 5.1 or later (Windows 10 and Windows 11 are supported).
+- Node.js LTS, including npm.
+- A ChatGPT account that can use Codex.
 
-On every run the launcher reads `HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings` (`ProxyEnable`, `ProxyServer`, `AutoConfigURL`) and records WinHTTP information without changing it. It accepts `socks=host:port`, `socks5=host:port`, `http=host:port`, `https=host:port`, mixed semicolon lists, and bare `host:port`. HTTP/HTTPS is preferred. SOCKS5 is converted using the local `proxy-chain` dependency, bound only to `127.0.0.1`, starting at port 8080 and advancing if occupied. Both the source and resulting proxy are checked; `200`, `302`, `401`, and `403` from `https://auth.openai.com` prove reachability.
+### Install Node.js on Windows
 
-Only the Codex child process receives `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`. A recorded, feature-checked PID is stopped on exit; unrelated Node processes and Anycast are never stopped. If automatic discovery fails, temporary interactive proxy input is offered. Nothing is persisted to system proxy or environment settings.
+Choose either method below. The command-line method requires Windows Package Manager (`winget`), which is normally included with current Windows 10/11 installations.
 
-## Build, test, and repository layout
+#### Command line (winget)
 
-Run the following from a source checkout:
+Open PowerShell and run:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Clean.ps1
+winget install --id OpenJS.NodeJS.LTS --exact --source winget
 ```
 
-`Build.ps1` runs `npm ci`, audits production dependencies, performs static checks and Pester tests, stages a release, creates `dist/CodexLauncher-v<version>.zip`, and writes its SHA-256. `dist` and `node_modules` are intentionally untracked. Source (`src`), build output (`dist`), installation directory, and desktop entry are separate layers.
+Approve the installer prompt if Windows displays one, then open a **new** PowerShell window.
 
-See [docs/architecture.md](docs/architecture.md), [docs/development.md](docs/development.md), and [docs/troubleshooting.md](docs/troubleshooting.md). Use `Uninstall.cmd` from the release package to remove only the launcher and its desktop entry; it retains Codex, login state, logs when removable, and projects.
+#### Download an installer
+
+Open the official [Node.js download page](https://nodejs.org/en/download/), then download the current **LTS** Windows Installer (`.msi`). Most PCs need the `x64` installer; use `ARM64` only on a Windows-on-ARM device. Run the installer and keep the default options, including npm and adding Node.js to `PATH`.
+
+After either method, verify the installation:
+
+```powershell
+node --version
+npm --version
+```
+
+Both commands should print a version number. If either command is not found, close and reopen PowerShell; if that does not help, restart Windows and try the installer method. If `winget` itself is not found, use the installer method.
+
+The launcher installs Codex CLI automatically when it is missing. On first use, follow the Codex prompt to sign in. The installer copies the launcher to `%LOCALAPPDATA%\CodexLauncher`, creates `%USERPROFILE%\Documents\CodexProjects` (including redirected Documents folders), and adds the Desktop entry. It does not change the Windows system proxy or persist proxy environment variables.
+
+The optional `CodexLauncher-v*.sha256` download lets you verify that the ZIP was not corrupted or replaced. Most users only need the ZIP.
+
+## First launch and daily use
+
+1. If your network needs a local proxy, start Clash, Anycast, or your other proxy client and enable its Windows system proxy. If your network works directly, no proxy setup is needed.
+2. Open the Desktop entry, `Codex终端版.cmd`.
+3. Choose one of the launch modes:
+   - `1` — start a new session and choose a project folder;
+   - `2` — open Codex's history-session picker.
+4. For a new session, the folder picker starts in `Documents\CodexProjects`. Cancelling the picker uses that folder. Chinese characters and spaces in paths are supported.
+
+At each launch, the launcher reads the current Windows proxy configuration. It accepts `socks=host:port`, `socks5=host:port`, `http=host:port`, `https=host:port`, mixed semicolon-separated lists, and bare `host:port`. HTTP/HTTPS is preferred. When only SOCKS5 is available, it starts a local HTTP conversion proxy bound to `127.0.0.1`, beginning at port 8080 and moving to another port if needed. It checks connectivity before starting Codex. If automatic detection fails, you can enter a temporary proxy manually or choose a direct connection.
+
+Only the Codex child process receives `HTTP_PROXY`, `HTTPS_PROXY`, and `NO_PROXY`. When Codex exits, the launcher stops only the conversion process it created. It does not stop unrelated Node processes or your proxy client.
+
+## Update or uninstall
+
+To update, download a newer release ZIP, extract it, close any running Codex/launcher windows, and run the new package's `Install.cmd`. Your projects and Codex login state are retained.
+
+To remove the launcher, run `Uninstall.cmd` from a release package. It removes the launcher and Desktop entry only; it retains Node.js, npm, Codex CLI, login state, logs when removable, and your projects.
+
+## Build from source
+
+Only use this path if you want to develop or modify the launcher. The `installer\Install.cmd` inside a source checkout is not a standalone installer: first build a release package, then run the `Install.cmd` inside `dist`.
+
+```powershell
+git clone https://github.com/luochuhao0219/codex-cli-windows-launcher.git
+cd .\codex-cli-windows-launcher
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Build.ps1
+.\dist\CodexLauncher-v<version>\Install.cmd
+```
+
+`Build.ps1` runs `npm ci`, audits production dependencies, performs static checks and Pester tests, stages a release, creates `dist/CodexLauncher-v<version>.zip`, and writes its SHA-256 file. `dist` and `node_modules` are intentionally untracked.
+
+See [docs/architecture.md](docs/architecture.md), [docs/development.md](docs/development.md), and [docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## Privacy, security, contribution, license
 
